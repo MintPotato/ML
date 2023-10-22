@@ -6,6 +6,7 @@ TRAIN_LABELS_FILE = 'C:/Users/Andre/OneDrive/Рабочий стол/data/data/m
 train_images = idx2numpy.convert_from_file(TRAIN_IMAGES_FILE)
 train_label = idx2numpy.convert_from_file(TRAIN_LABELS_FILE)
 
+
 def number_to_console(el):
     for line in train_images[el]:
         for num in line:
@@ -21,5 +22,5 @@ for el in range(len(train_label)):
         number_to_console(el)
         count += 1
 
-    if count == 3:
+    if count == 5:
         break

@@ -55,9 +55,9 @@ class Layer:
 
 
 class Model:
-    def __init__(self, inputs: list[tuple[int]], output: list[list[int]], learn_rate: float):
+    def __init__(self, inputs: list[list[int]], output: list[list[int]], learn_rate: float):
         self.layers: list[Layer] = []
-        self.inputs: list[tuple[int]] = inputs
+        self.inputs: list[list[int]] = inputs
         self.n_of_inputs: int = len(inputs[0])
         self.true_outputs: list[int] = output
         self.index_list: list[int] = [i for i in range(len(inputs))]
@@ -74,12 +74,12 @@ class Model:
             middle_error = 0
             for inp in self.index_list:
                 self.forward_pass(inp)
-                middle_error += self.true_outputs[inp] - self.layers[-1].outputs[0]
+                middle_error += sum(self.true_outputs[inp]) - sum(self.layers[-1].outputs)
                 self.backward_pass(inp)
             self.average_errors += [np.abs((middle_error / len(self.index_list)))]
 
     def forward_pass(self, inp):
-        neuron_input = (1,) + self.inputs[inp]
+        neuron_input = [1] + self.inputs[inp]
         for layer in self.layers:
             layer.compute_outputs(neuron_input)
             neuron_input = [1.0] + layer.outputs
@@ -88,14 +88,14 @@ class Model:
         next_error = []
         for out in range(len(self.layers[-1].outputs)):
             next_error += [-(self.true_outputs[inp][out] - self.layers[-1].outputs[out])]
-        knots_outputs = [[1] + list(self.inputs[inp])] + [[1] + layer.outputs for layer in self.layers]
-        for layer in range(len(self.layers)):
-            self.layers[-1 - layer].local_errors = np.array(next_error)
-            self.layers[-1 - layer].adjust_weights(self.learn_rate, knots_outputs[-2 - layer])
-            next_error = self.layers[-1 - layer].compute_next_errors()
+        knots_outputs = [[1] + self.inputs[inp]] + [[1] + layer.outputs for layer in self.layers]
+        for layer in range(len(self.layers) - 1, -1, -1):
+            self.layers[layer].local_errors = np.array(next_error)
+            self.layers[layer].adjust_weights(self.learn_rate, knots_outputs[layer])
+            next_error = self.layers[layer].compute_next_errors()
 
-    def compute(self, x: list[int]):
-        outputs = [1] + x
+    def compute(self, x: np.array):
+        outputs = [1] + list(x)
         for layer in self.layers:
             layer.compute_outputs(outputs)
             outputs = [1] + layer.outputs
@@ -109,16 +109,20 @@ class Model:
         plt.show()
 
 
-x_train = list(product([-1, 1], repeat=4))
-y_train = [[1, 0, 0], [1, 0, 0], [1, 0, 0], [0, 1, 1], [1, 0, 0], [1, 0, 0], [0, 1, 1], [0, 1, 1], [1, 0, 0], [0, 1, 1], [1, 0, 0], [1, 0, 0], [0, 1, 1], [0, 1, 1], [1, 0, 0], [1, 0, 0]]
+if __name__ == '__main__':
+    x_train = [[-1, -1], [-1, 1], [1, -1], [1, 1]]
+    y_train = [[1, 0, 0], [1, 0, 0], [1, 0, 0], [0, 1, 1], [1, 0, 0], [1, 0, 0], [0, 1, 1], [0, 1, 1], [1, 0, 0],
+               [0, 1, 1], [1, 0, 0], [1, 0, 0], [0, 1, 1], [0, 1, 1], [1, 0, 0], [1, 0, 0]]
 
-m = Model(x_train, y_train, 0.1)
-m.add_layer(4, 'tanh')
-m.add_layer(8, 'tanh')
-m.add_layer(3, 'sigmoid')
-m.learn(512)
-m.show_errors()
-count = 0
-for x in x_train:
-    count += 1
-    print(f'{count}: Выход нейронной сети {m.compute(list(x))} - Искомый выход {y_train[count - 1]}')
+    #
+    m = Model(x_train, y_train, 0.1)
+    m.add_layer(4, 'tanh')
+    m.add_layer(8, 'tanh')
+    m.add_layer(3, 'sigmoid')
+    m.learn(512)
+    m.show_errors()
+    count = 0
+    for x in x_train:
+        count += 1
+        print(f'{count}: Выход нейронной сети {m.compute(list(x))} - Искомый выход {y_train[count - 1]}')
+    #
